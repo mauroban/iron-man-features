@@ -17,6 +17,7 @@ WITH team_game AS (
         tg.clutches,
         tg.first_kills,
         maps.name AS played_map,
+        eht.rank hltv_rank,
         score + score_opponent AS total_rounds,
         score,
         SUM(pg.kills) AS kills,
@@ -37,6 +38,7 @@ WITH team_game AS (
         MAX(pg.rating) AS max_rating,
         AVG(pg.rating) AS avg_rating,
         MIN(pg.rating) AS min_rating,
+        STD(pg.rating) AS rating_stddev, 
         MAX(pg.rating_ct) AS max_rating_ct,
         AVG(pg.rating_ct) AS avg_rating_ct,
         MIN(pg.rating_ct) AS min_rating_ct,
@@ -67,6 +69,7 @@ SELECT
     t.clutches,
     t.first_kills,
     t.played_map,
+    t.hltv_rank,
     t.total_rounds,
     t.score,
     t.kills,
@@ -104,6 +107,7 @@ SELECT
     op.won_pistol_tr AS won_pistol_tr_op,
     op.clutches AS clutches_op,
     op.first_kills AS first_kills_op,
+    op.hltv_rank AS hltv_rank_op,
     op.score AS score_op,
     op.kills AS kills_op,
     op.deaths AS deaths_op,
@@ -130,6 +134,27 @@ SELECT
     op.avg_rating_tr AS avg_rating_tr_op,
     op.min_rating_tr AS min_rating_tr_op,
     -- feature calculations
+    -- pistol
+    t.won_pistol_ct + t.won_pistol_tr AS pistols_won,
+    -- rank split
+    CASE WHEN op.hltv_rank <= 5 THEN 5
+        WHEN op.hltv_rank <= 10 THEN 10
+        WHEN op.hltv_rank <= 20 THEN 20
+        WHEN op.hltv_rank <= 50 THEN 50
+        WHEN op.hltv_rank <= 100 THEN 100
+        WHEN op.hltv_rank <= 500 THEN 500
+        ELSE NULL END AS top_hltv_rank_op,
+    CASE WHEN t.hltv_rank <= 5 THEN 5
+        WHEN t.hltv_rank <= 10 THEN 10
+        WHEN t.hltv_rank <= 20 THEN 20
+        WHEN t.hltv_rank <= 50 THEN 50
+        WHEN t.hltv_rank <= 100 THEN 100
+        WHEN t.hltv_rank <= 500 THEN 500
+        ELSE NULL END AS top_hltv_rank,
+    t.hltv_rank - op.hltv_rank AS rank_diff,
+    -- performance
+    t.min_rating < (t.avg_rating - 0.4) AS player_carried_down,
+    t.max_rating > (t.avg_rating + 0.5) AS player_carried, 
     -- target
     t.score > op.score won
 FROM team_game t
