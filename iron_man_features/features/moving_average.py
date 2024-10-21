@@ -1,6 +1,7 @@
 import pandas as pd
 
-from iron_man_features.features.calculation_functions import calculate_moving_average
+from iron_man_features.features.calculation_functions import \
+    calculate_moving_average
 from iron_man_features.features.model_feature import ModelFeature
 
 

@@ -16,7 +16,7 @@ WITH team_game AS (
         tg.won_pistol_tr,
         tg.clutches,
         tg.first_kills,
-        maps.name AS played_map,
+        LOWER(maps.name) AS played_map,
         eht.rank hltv_rank,
         score + score_opponent AS total_rounds,
         score,
@@ -154,8 +154,13 @@ SELECT
     t.hltv_rank - op.hltv_rank AS rank_diff,
     -- performance
     t.min_rating < (t.avg_rating - 0.4) AS player_carried_down,
-    t.max_rating > (t.avg_rating + 0.5) AS player_carried, 
+    t.max_rating > (t.avg_rating + 0.5) AS player_carried,
+    -- scouts
+    t.kills/t.total_rounds AS kills_per_round,
+    t.deaths/t.total_rounds AS deaths_per_round,
+    t.first_kills/t.total_rounds AS first_kills_per_round,
+    t.flash_assists/t.total_rounds AS flash_assists_per_round,
     -- target
-    t.score > op.score won
+    t.score > op.score AS won
 FROM team_game t
 LEFT JOIN team_game op ON t.game_id = op.game_id AND t.team_id <> op.team_id;

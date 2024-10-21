@@ -2,7 +2,6 @@ from typing import Dict
 
 import pandas as pd
 
-
 # Cache global para armazenar resultados de groupby
 groupby_cache: Dict[str, pd.DataFrame] = {}
 
@@ -17,9 +16,7 @@ def apply_filters(df, filters):
     """
     filtered_df = df.copy()
     for key, value in filters.items():
-        filtered_df = filtered_df[
-            (filtered_df[key] == value)
-        ]
+        filtered_df = filtered_df[(filtered_df[key] == value)]
     return filtered_df
 
 
@@ -43,9 +40,7 @@ def get_grouped_df(
     return groupby_cache[cache_key]
 
 
-def calculate_sum(
-    df, field, shift=1, weight_field=None, filters=None
-):
+def calculate_sum(df, field, shift=1, weight_field=None, filters=None):
     grouped_df = get_grouped_df(
         df=df,
         groupby_key="roster_hash",
@@ -75,9 +70,7 @@ def calculate_sum(
         return hist_sum
 
 
-def calculate_average(
-    df, field, shift=1, weight_field=None, filters=None
-):
+def calculate_average(df, field, shift=1, weight_field=None, filters=None):
     grouped_df = get_grouped_df(
         df=df,
         groupby_key="roster_hash",

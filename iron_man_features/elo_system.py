@@ -1,5 +1,6 @@
-import pandas as pd
 from typing import Dict, Tuple
+
+import pandas as pd
 
 
 class EloSystem:
@@ -36,10 +37,10 @@ class EloSystem:
             100: 1475,
             200: 1450,
             300: 1375,
-            350: 1350
+            350: 1350,
         }
         if pd.isna(rank):
-            return 1300
+            return 1325
         for i in base_elo.keys():
             if int(rank) <= i:
                 return base_elo[i]
@@ -91,7 +92,7 @@ class EloSystem:
         team_rank: int,
         opponent_rank: int,
     ) -> None:
-        """  # noqa
+        """# noqa
         Update Elo ratings for both teams based on the match result, applying a boost if necessary.
 
         Args:

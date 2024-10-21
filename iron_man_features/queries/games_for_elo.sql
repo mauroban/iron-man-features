@@ -14,7 +14,7 @@ WITH team_game AS (
         tg.score_tr,
         g.map_id,
         eht.rank as hltv_rank,
-        maps.name AS played_map,
+        LOWER(maps.name) AS played_map,
         score + score_opponent AS total_rounds,
         score
     FROM team_games tg 
