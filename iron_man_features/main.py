@@ -22,19 +22,12 @@ logging.basicConfig(
 
 dfs = get_dataframes("iron_man_features/queries")
 
-
 data = pd.concat([dfs["team_games"], dfs["matches_to_predict"]])
-logging.info(len(data))
-
 data = calculate_elos(data, dfs["games_for_elo"])
-
-logging.info(len(data))
 
 feature_df = data[
     ["match_id", "team_id", "team_id_op", "game_id", "played_map", "won"]
 ].copy()
-
-logging.info(len(feature_df))
 
 feature_df = calculate_features(
     feature_df=feature_df,
@@ -42,10 +35,20 @@ feature_df = calculate_features(
     information_df=data,
 )
 
-logging.info(len(feature_df))
+feature_df = keep_only_played_map_columns(feature_df)
+new = pd.isna(feature_df["won"])
 
-updated_feat_df = keep_only_played_map_columns(feature_df)
-new = pd.isna(updated_feat_df["won"])
+matches_to_predict = feature_df[new]
+feature_df = feature_df[~new]
 
-updated_feat_df[~new].to_csv("data/features.csv", index=False)
-updated_feat_df[new].to_csv("data/matches_to_predict.csv", index=False)
+logging.info(
+    f"Saving features df with {len(feature_df)} rows and {len(feature_df.columns)} "
+    "columns"
+)
+feature_df.to_csv("data/features.csv", index=False)
+
+logging.info(
+    f"Saving matches to predict df with {len(matches_to_predict)} rows and "
+    f"{len(matches_to_predict.columns)} columns"
+)
+matches_to_predict.to_csv("data/matches_to_predict.csv", index=False)

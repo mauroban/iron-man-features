@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Dict
 
@@ -15,4 +16,5 @@ def get_dataframes(folder: str) -> Dict[str, pd.DataFrame]:
             with open(path, "r") as file:
                 query = file.read()
                 dfs[name] = pd.read_sql(query, engine)
+                logging.info(f"Downloaded {name} df")
     return dfs

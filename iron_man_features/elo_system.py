@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Dict, Tuple
 
 import pandas as pd
@@ -26,6 +27,12 @@ class EloSystem:
         self.boost_threshold = boost_threshold
         self.boost_factor = boost_factor
         self.ratings = {}
+        logging.info(
+            "Elo System initiated using:\n"
+            f"k_factor = {k_factor}\n"
+            f"boost_threshold = {boost_threshold}\n"
+            f"boost_factor = {boost_factor}\n"
+        )
 
     def default_elo(self, rank) -> float:
         # return 1500
@@ -214,6 +221,10 @@ class EloSystem:
 def calculate_elos(df, elo_games_df):
     elo_system = EloSystem()
     elo_system.calculate_elo(games=elo_games_df)
+    logging.info(
+        f"Calculated elos for {len(elo_system.ratings.keys())} teams using "
+        f"{len(elo_games_df)} game results"
+    )
     df = elo_system.add_elos_to_df(df)
 
     new_matches = pd.isna(df["won"])

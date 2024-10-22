@@ -1,3 +1,4 @@
+import logging
 import pandas as pd
 
 from iron_man_features.features import MAPS
@@ -10,6 +11,7 @@ def calculate_features(
 ) -> pd.DataFrame:
     """Calculates features for a given list of feature classes."""
     try:
+        logging.info(f"Calculating {len(feature_classes)} features")
         features = [feature_df] + [
             f.calculation(information_df) for f in feature_classes
         ]
@@ -53,14 +55,16 @@ def get_map_based_features(feature_df):
 
 
 def keep_only_played_map_columns(df):
+    logging.info("Creating specific map features")
     map_related_columns = [
-        col
-        for col in df.columns
-        if "played_map" in col.lower() and col != "played_map"
+        # col
+        # for col in df.columns
+        # if "played_map" in col.lower() and col != "played_map"
     ]
     for map_name in MAPS:
         for f in df.columns:
             if map_name.lower() in f:
                 map_related_columns.append(f)
 
+    logging.info(f"Removing {len(map_related_columns)} general map features")
     return get_map_based_features(df).drop(columns=map_related_columns)
