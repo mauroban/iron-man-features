@@ -10,7 +10,7 @@ class EloSystem:
         self,
         k_factor: int = 32,
         boost_threshold: int = 6,
-        boost_factor: float = 1.2,
+        boost_factor: float = 1,
     ):
         """
         Initialize the EloSystem.
