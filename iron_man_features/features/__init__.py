@@ -4,7 +4,7 @@ from iron_man_features.features.simple_feature import SimpleFeature
 
 FEATURES = [
     SimpleFeature("overall_elo"),
-    SimpleFeature("overall_elo_op"),
+    # SimpleFeature("overall_elo_op"),
 ]
 
 MAPS = ["Anubis", "Mirage", "Nuke", "Dust2", "Vertigo", "Ancient", "Inferno"]
@@ -45,4 +45,4 @@ for avg_column in average_columns:
 
 for map_name in MAPS:
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo"))
-    FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_op"))
+    # FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_op"))

@@ -229,15 +229,9 @@ def calculate_elos(df, elo_games_df):
 
     new_matches = pd.isna(df["won"])
     elo_columns = [c for c in df.columns if "elo" in c and "op" not in c]
-    op_elo_columns = [c for c in df.columns if "elo" in c and "op" in c]
 
     for c in elo_columns:
         for i, new_match in df.loc[new_matches].iterrows():
             df.at[i, c] = elo_system.ratings.get(new_match["roster_hash"]).get(c)
 
-    for c in op_elo_columns:
-        for i, new_match in df.loc[new_matches].iterrows():
-            df.at[i, c] = elo_system.ratings.get(new_match["roster_hash_op"]).get(
-                c.replace("_op", "")
-            )
     return df

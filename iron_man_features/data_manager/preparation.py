@@ -68,3 +68,19 @@ def keep_only_played_map_columns(df):
 
     logging.info(f"Removing {len(map_related_columns)} general map features")
     return get_map_based_features(df).drop(columns=map_related_columns)
+
+
+def create_opponent_features(df: pd.DataFrame):
+    feat_columns = [f for f in df.columns if '(' in f]
+    op_df = df[['team_id', 'game_id'] + feat_columns].copy()
+    op_df = op_df.rename(
+        lambda c: f"{c}_op", axis=1
+    )
+    df = df.merge(
+        op_df,
+        how='left',
+        left_on=['game_id', 'team_id_op'],
+        right_on=['game_id_op', 'team_id_op'],
+    )
+    logging.info(len(df))
+    return df

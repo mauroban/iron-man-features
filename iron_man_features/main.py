@@ -5,6 +5,7 @@ import pandas as pd
 from iron_man_features.data_manager.downloads import get_dataframes
 from iron_man_features.data_manager.preparation import (
     calculate_features,
+    create_opponent_features,
     keep_only_played_map_columns,
 )
 from iron_man_features.elo_system import calculate_elos
@@ -34,6 +35,9 @@ feature_df = calculate_features(
     feature_classes=FEATURES,
     information_df=data,
 )
+
+feature_df = create_opponent_features(feature_df)
+
 
 feature_df = keep_only_played_map_columns(feature_df)
 new = pd.isna(feature_df["won"])
