@@ -1,5 +1,6 @@
 import importlib
 import logging
+
 import pandas as pd
 
 from iron_man_features.data_manager.downloads import get_dataframes
@@ -8,8 +9,9 @@ from iron_man_features.data_manager.preparation import (
     create_opponent_features,
     keep_only_played_map_columns,
 )
-from iron_man_features.elo_system import calculate_elos
+from iron_man_features.elo_system import EloSystem, calculate_elos
 from iron_man_features.features import FEATURES
+
 
 importlib.reload(logging)
 
@@ -24,10 +26,17 @@ logging.basicConfig(
 dfs = get_dataframes("iron_man_features/queries")
 
 data = pd.concat([dfs["team_games"], dfs["matches_to_predict"]])
-data = calculate_elos(data, dfs["games_for_elo"])
+
+elo_system = EloSystem()
+data = calculate_elos(data, dfs["games_for_elo"], elo_system)
+elo_system_strong = EloSystem(
+    k_factor=70,
+    postfix="_strong",
+)
+data = calculate_elos(data, dfs["games_for_elo"], elo_system_strong)
 
 feature_df = data[
-    ["match_id", "team_id", "team_id_op", "game_id", "played_map", "won"]
+    ["match_id", "match_date", "team_id", "team_id_op", "game_id", "played_map", "won"]
 ].copy()
 
 feature_df = calculate_features(
@@ -36,7 +45,29 @@ feature_df = calculate_features(
     information_df=data,
 )
 
+
 feature_df = create_opponent_features(feature_df)
+
+
+def create_elo_crossing_features(df: pd.DataFrame):
+    team_elo_features = [f for f in df.columns if "elo" in f and "_op" not in f]
+    # op_elo_features = [f for f in df.columns if 'elo' in f and '_op' in f]
+    for f in team_elo_features:
+        new_feature_name = f.replace("elo", "elo_cross")
+        if "_tr" in f:
+            op_f_name = f"{f.replace("_tr", "_ct")}_op"
+        elif "_ct" in f:
+            op_f_name = f"{f.replace("_ct", "_tr")}_op"
+        else:
+            op_f_name = f"{f}_op"
+        df[new_feature_name] = df.apply(
+            lambda r: elo_system.calc_expected_score(r[f], r[op_f_name]), axis=1
+        )
+
+    return df
+
+
+feature_df = create_elo_crossing_features(feature_df)
 
 
 feature_df = keep_only_played_map_columns(feature_df)

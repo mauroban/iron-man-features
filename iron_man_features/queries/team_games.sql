@@ -58,6 +58,7 @@ WITH team_game AS (
 )
 SELECT 
     t.match_id,
+    t.match_date,
     t.team_id,
     t.game_id,
     t.roster_hash,
@@ -155,14 +156,17 @@ SELECT
         ELSE NULL END AS top_hltv_rank,
     t.hltv_rank - op.hltv_rank AS rank_diff,
     -- performance
-    t.min_rating < (t.avg_rating - 0.4) AS player_carried_down,
-    t.max_rating > (t.avg_rating + 0.5) AS player_carried,
+    t.min_rating < 0.5 AS player_carried_down,
+    t.max_rating > 1.6 AS player_carried,
     -- scouts
     t.kills/t.total_rounds AS kills_per_round,
     t.deaths/t.total_rounds AS deaths_per_round,
     t.first_kills/t.total_rounds AS first_kills_per_round,
     t.flash_assists/t.total_rounds AS flash_assists_per_round,
+    t.clutches/t.total_rounds AS clutches_per_round,
+    1 as game_played,
     -- target
     t.score > op.score AS won
 FROM team_game t
-LEFT JOIN team_game op ON t.game_id = op.game_id AND t.team_id <> op.team_id;
+LEFT JOIN team_game op ON t.game_id = op.game_id AND t.team_id <> op.team_id
+ORDER BY t.match_date;

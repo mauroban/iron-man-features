@@ -3,6 +3,7 @@ WITH team_game AS (
         tg.team_id,
         tg.game_id,
         m.lan,
+        m.id as match_id,
         m.start_date,
         t.name AS team_name,
         GROUP_CONCAT(
@@ -30,6 +31,7 @@ WITH team_game AS (
 SELECT 
     t.team_id,
     t.game_id,
+    t.match_id,
     t.lan,
     t.start_date,
     t.roster_hash,
@@ -54,4 +56,4 @@ SELECT
 FROM team_game t
 LEFT JOIN team_game op ON t.game_id = op.game_id AND t.team_id <> op.team_id
 WHERE t.team_id < op.team_id
-ORDER BY t.start_date;
+ORDER BY t.start_date, t.game_id;

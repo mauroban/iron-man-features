@@ -32,6 +32,7 @@ SELECT
 	t1.id AS match_id,
 	t1.max_maps,
 	t1.team_id,
+    100000*t1.id + ROW_NUMBER() OVER () AS game_id,
 	t1.start_date,
 	t1.team_name,
 	t1.roster_hash,

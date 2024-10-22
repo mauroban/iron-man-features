@@ -11,6 +11,8 @@ class EloSystem:
         k_factor: int = 32,
         boost_threshold: int = 6,
         boost_factor: float = 1,
+        postfix: str = "",
+        first_from_rank: bool = True,
     ):
         """
         Initialize the EloSystem.
@@ -27,32 +29,35 @@ class EloSystem:
         self.boost_threshold = boost_threshold
         self.boost_factor = boost_factor
         self.ratings = {}
+        self.postfix = postfix
+        self.first_from_rank = first_from_rank
         logging.info(
-            "Elo System initiated using:\n"
-            f"k_factor = {k_factor}\n"
-            f"boost_threshold = {boost_threshold}\n"
-            f"boost_factor = {boost_factor}\n"
+            "Elo System initiated\n"
+            f"k_factor: {k_factor}\n"
+            f"boost_threshold: {boost_threshold}\n"
+            f"boost_factor: {boost_factor}\n"
+            f"postfix: {postfix}\n"
+            f"first_from_rank: {first_from_rank}"
         )
 
     def default_elo(self, rank) -> float:
-        # return 1500
-        base_elo = {
-            5: 1600,
-            10: 1575,
-            20: 1550,
-            30: 1525,
-            50: 1500,
-            100: 1475,
-            200: 1450,
-            300: 1375,
-            350: 1350,
-        }
+        if not self.first_from_rank:
+            return 1500
         if pd.isna(rank):
-            return 1325
+            return 1200
+        base_elo = {
+            5: 1650,
+            10: 1600,
+            20: 1550,
+            50: 1500,
+            100: 1450,
+            200: 1350,
+            500: 1250,
+        }
         for i in base_elo.keys():
             if int(rank) <= i:
                 return base_elo[i]
-        return 1350
+        return 1200
 
     def calc_expected_score(self, elo_team: float, elo_opponent: float) -> float:
         """
@@ -146,7 +151,10 @@ class EloSystem:
         Process a single game to update overall Elo, map-specific Elo,
         and side-specific Elo.
         """
-        for elo_hash in ["overall_elo", f"{game["played_map"].lower()}_elo"]:
+        for elo_hash in [
+            f"overall_elo{self.postfix}",
+            f"{game["played_map"].lower()}_elo{self.postfix}",
+        ]:
             self.update_elo(
                 team_id=game["roster_hash"],
                 opponent_id=game["roster_hash_op"],
@@ -163,7 +171,7 @@ class EloSystem:
                 opponent_id=game["roster_hash_op"],
                 team_score=game[f"score_{side}"],
                 opponent_score=game[f"score_{side}_op"],
-                elo_hash=f"{game["played_map"].lower()}_{side}_elo",
+                elo_hash=f"{game["played_map"].lower()}_{side}_elo{self.postfix}",
                 team_rank=game["hltv_rank"],
                 opponent_rank=game["hltv_rank_op"],
             )
@@ -186,13 +194,19 @@ class EloSystem:
             - side_map_elo: Dictionary of side-specific Elo ratings.
         """
         elo_rows = []
-        for _, game in games.iterrows():
+        match_ratings = {}
+        last_match_id = None
+        for _, game in games.sort_values("start_date").iterrows():
+            if not last_match_id or last_match_id != game["match_id"]:
+                match_ratings = self.ratings.copy()
+                last_match_id = game["match_id"]
             for roster_hash in [game["roster_hash"], game["roster_hash_op"]]:
                 elo_row = {
                     "game_id": game["game_id"],
                     "roster_hash": roster_hash,
                 }
-                elo_row.update(self.ratings.get(roster_hash, {}))
+                elo_row.update(match_ratings.get(roster_hash, {}))
+                # print(elo_row)
                 elo_rows.append(elo_row)
             self.process_game(game)
 
@@ -205,12 +219,6 @@ class EloSystem:
             left_on=["roster_hash", "game_id"],
             right_on=["roster_hash", "game_id"],
         )
-        df = df.merge(
-            self.elo_table.rename(lambda c: f"{c}_op", axis=1),
-            how="left",
-            left_on=["roster_hash_op", "game_id"],
-            right_on=["roster_hash_op", "game_id_op"],
-        )
         return df
 
     def save_ratings(self):
@@ -218,8 +226,9 @@ class EloSystem:
             json.dump(self.ratings, f, indent=4)
 
 
-def calculate_elos(df, elo_games_df):
-    elo_system = EloSystem()
+def calculate_elos(
+    df: pd.DataFrame, elo_games_df: pd.DataFrame, elo_system: EloSystem
+) -> pd.DataFrame:
     elo_system.calculate_elo(games=elo_games_df)
     logging.info(
         f"Calculated elos for {len(elo_system.ratings.keys())} teams using "
@@ -228,7 +237,7 @@ def calculate_elos(df, elo_games_df):
     df = elo_system.add_elos_to_df(df)
 
     new_matches = pd.isna(df["won"])
-    elo_columns = [c for c in df.columns if "elo" in c and "op" not in c]
+    elo_columns = [c for c in df.columns if f"elo{elo_system.postfix}" in c]
 
     for c in elo_columns:
         for i, new_match in df.loc[new_matches].iterrows():
