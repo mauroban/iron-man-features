@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Tuple
 
 import pandas as pd
@@ -188,4 +189,44 @@ class EloSystem:
                 elo_rows.append(elo_row)
             self.process_game(game)
 
-        return pd.DataFrame.from_records(elo_rows)
+        self.elo_table = pd.DataFrame.from_records(elo_rows)
+
+    def add_elos_to_df(self, df):
+        df = df.merge(
+            self.elo_table,
+            how="left",
+            left_on=["roster_hash", "game_id"],
+            right_on=["roster_hash", "game_id"],
+        )
+        df = df.merge(
+            self.elo_table.rename(lambda c: f"{c}_op", axis=1),
+            how="left",
+            left_on=["roster_hash_op", "game_id"],
+            right_on=["roster_hash_op", "game_id_op"],
+        )
+        return df
+
+    def save_ratings(self):
+        with open("elo_ratings.json", "w") as f:
+            json.dump(self.ratings, f, indent=4)
+
+
+def calculate_elos(df, elo_games_df):
+    elo_system = EloSystem()
+    elo_system.calculate_elo(games=elo_games_df)
+    df = elo_system.add_elos_to_df(df)
+
+    new_matches = pd.isna(df["won"])
+    elo_columns = [c for c in df.columns if "elo" in c and "op" not in c]
+    op_elo_columns = [c for c in df.columns if "elo" in c and "op" in c]
+
+    for c in elo_columns:
+        for i, new_match in df.loc[new_matches].iterrows():
+            df.at[i, c] = elo_system.ratings.get(new_match["roster_hash"]).get(c)
+
+    for c in op_elo_columns:
+        for i, new_match in df.loc[new_matches].iterrows():
+            df.at[i, c] = elo_system.ratings.get(new_match["roster_hash_op"]).get(
+                c.replace("_op", "")
+            )
+    return df

@@ -1,5 +1,7 @@
 import pandas as pd
 
+from iron_man_features.features import MAPS
+
 
 def calculate_features(
     feature_df: pd.DataFrame,
@@ -48,3 +50,17 @@ def get_map_based_features(feature_df):
         ].values
 
     return feature_df
+
+
+def keep_only_played_map_columns(df):
+    map_related_columns = [
+        col
+        for col in df.columns
+        if "played_map" in col.lower() and col != "played_map"
+    ]
+    for map_name in MAPS:
+        for f in df.columns:
+            if map_name.lower() in f:
+                map_related_columns.append(f)
+
+    return get_map_based_features(df).drop(columns=map_related_columns)

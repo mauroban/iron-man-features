@@ -2,6 +2,7 @@ from typing import Dict
 
 import pandas as pd
 
+
 # Cache global para armazenar resultados de groupby
 groupby_cache: Dict[str, pd.DataFrame] = {}
 

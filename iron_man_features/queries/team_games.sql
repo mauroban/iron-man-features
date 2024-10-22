@@ -1,5 +1,6 @@
 WITH team_game AS (
     SELECT 
+        m.id as match_id,
         tg.team_id,
         tg.game_id,
         m.lan,
@@ -56,6 +57,7 @@ WITH team_game AS (
     GROUP BY tg.id
 )
 SELECT 
+    t.match_id,
     t.team_id,
     t.game_id,
     t.roster_hash,
