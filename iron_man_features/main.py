@@ -30,8 +30,8 @@ data = pd.concat([dfs["team_games"], dfs["matches_to_predict"]])
 elo_system = EloSystem()
 data = calculate_elos(data, dfs["games_for_elo"], elo_system)
 elo_system_strong = EloSystem(
-    k_factor=70,
-    postfix="_strong",
+    k_factor=10,
+    postfix="_slow",
 )
 data = calculate_elos(data, dfs["games_for_elo"], elo_system_strong)
 
@@ -73,7 +73,7 @@ feature_df = create_elo_crossing_features(feature_df)
 feature_df = keep_only_played_map_columns(feature_df)
 new = pd.isna(feature_df["won"])
 
-matches_to_predict = feature_df[new]
+matches_to_predict = feature_df[new].drop_duplicates()
 feature_df = feature_df[~new]
 
 logging.info(

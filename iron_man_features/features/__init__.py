@@ -7,14 +7,14 @@ from iron_man_features.features.simple_feature import SimpleFeature
 
 FEATURES = [
     SimpleFeature("overall_elo"),
-    SimpleFeature("overall_elo_strong"),
+    # SimpleFeature("lan"),
+    SimpleFeature("overall_elo_slow"),
     HistoricalSum("game_played"),
     Categorical("played_map"),
-    # SimpleFeature("hltv_rank"),
-    # SimpleFeature("overall_elo_op"),
+    SimpleFeature("hltv_rank"),
 ]
 
-MAPS = ["Anubis", "Mirage", "Nuke", "Dust2", "Vertigo", "Ancient", "Inferno"]
+MAPS = ["anubis", "mirage", "nuke", "dust2", "vertigo", "ancient", "inferno"]
 
 WINDOWS = [3, 5, 10, 20, 50, 100]
 
@@ -24,33 +24,20 @@ average_columns = [
     "deaths_per_round",
     "first_kills_per_round",
     "flash_assists_per_round",
+    "avg_rating",
+    "avg_kast",
     "clutches_per_round",
     "pistols_won",
+    "hltv_rank",
+    "hltv_rank_op",
     "player_carried",
     "player_carried_down",
 ]
 
 for avg_column in average_columns:
-    HistoricalAverage(avg_column)
+    FEATURES.append(HistoricalAverage(avg_column))
     for map_name in MAPS:
         FEATURES.append(HistoricalAverage(avg_column, played_map=map_name.lower()))
-    for i in [0, 1]:
-        FEATURES.append(HistoricalAverage(avg_column, lan=i))
-
-
-# for window in WINDOWS:
-#     # FEATURES.append(MovingAverage("won", window, player_carried=1))
-#     # FEATURES.append(MovingAverage("won", window, player_carried_down=1))
-#     for map_name in MAPS:
-#         for pistols in [0, 1, 2]:
-#             FEATURES.append(
-#                 MovingAverage(
-#                     "won",
-#                     window,
-#                     pistols_won=pistols,
-#                     played_map=map_name.lower(),
-#                 )
-#             )
 
 for avg_column in average_columns:
     for window in WINDOWS:
@@ -62,8 +49,7 @@ for avg_column in average_columns:
 
 for map_name in MAPS:
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo"))
-    FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_strong"))
+    FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_slow"))
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_ct_elo"))
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_tr_elo"))
-    HistoricalSum("game_played", played_map=map_name),
-    # FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_op"))
+    FEATURES.append(HistoricalSum("game_played", played_map=map_name))

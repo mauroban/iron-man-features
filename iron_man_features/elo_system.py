@@ -44,20 +44,19 @@ class EloSystem:
         if not self.first_from_rank:
             return 1500
         if pd.isna(rank):
-            return 1200
+            return 1350
         base_elo = {
-            5: 1650,
-            10: 1600,
+            5: 1600,
             20: 1550,
             50: 1500,
             100: 1450,
-            200: 1350,
-            500: 1250,
+            200: 1400,
+            500: 1350,
         }
         for i in base_elo.keys():
             if int(rank) <= i:
                 return base_elo[i]
-        return 1200
+        return 1350
 
     def calc_expected_score(self, elo_team: float, elo_opponent: float) -> float:
         """
@@ -231,7 +230,7 @@ def calculate_elos(
 ) -> pd.DataFrame:
     elo_system.calculate_elo(games=elo_games_df)
     logging.info(
-        f"Calculated elos for {len(elo_system.ratings.keys())} teams using "
+        f"Calculated elos for {len(elo_system.ratings.keys())} team rosters using "
         f"{len(elo_games_df)} game results"
     )
     df = elo_system.add_elos_to_df(df)

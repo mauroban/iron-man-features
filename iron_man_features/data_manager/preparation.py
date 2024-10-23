@@ -36,7 +36,7 @@ def get_map_based_features(feature_df):
         specific_map_features = [
             col
             for col in feature_df.columns
-            if map_name in col.lower() and "categorical" not in col.lower()
+            if map_name.lower() in col.lower() and "categorical" not in col.lower()
         ]
         new_features = [
             col.replace(map_name, "played_map") for col in specific_map_features
@@ -66,7 +66,7 @@ def keep_only_played_map_columns(df):
     ]
     for map_name in MAPS:
         for f in df.columns:
-            if map_name.lower() in f and "categorical" not in f:
+            if map_name.lower() in f.lower() and "categorical" not in f:
                 map_related_columns.append(f)
 
     logging.info(f"Removing {len(map_related_columns)} general map features")
@@ -78,12 +78,12 @@ def create_opponent_features(df: pd.DataFrame):
         f for f in df.columns if "(" in f and "categorical(played_map" not in f
     ]
     logging.info(f"Creating {len(feat_columns)} opponent features")
-    op_df = df[["team_id", "game_id"] + feat_columns].copy()
+    op_df = df[["team_id", "game_id", "played_map"] + feat_columns].copy()
     op_df = op_df.rename(lambda c: f"{c}_op", axis=1)
     df = df.merge(
         op_df,
         how="left",
-        left_on=["game_id", "team_id_op"],
-        right_on=["game_id_op", "team_id_op"],
+        left_on=["game_id", "played_map", "team_id_op"],
+        right_on=["game_id_op", "played_map_op", "team_id_op"],
     )
     return df
