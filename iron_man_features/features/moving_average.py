@@ -38,10 +38,10 @@ class MovingAverage(ModelFeature):
         self.field = field
         self.n_games = n_games
         self.filters = kwargs
-        kwargs_string = ", ".join([f"{k}={v}" for k, v in self.filters.items()])
-        self.name = f"moving_average({self.field}, {self.n_games}"
+        kwargs_string = "-".join([f"{k}={v}" for k, v in self.filters.items()])
+        self.name = f"moving_average({self.field}-{self.n_games}"
         if len(kwargs_string) > 2:
-            self.name += f", {kwargs_string})"
+            self.name += f"-{kwargs_string})"
         else:
             self.name += ")"
 

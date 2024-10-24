@@ -1,4 +1,5 @@
 import importlib
+import json
 import logging
 
 import pandas as pd
@@ -11,6 +12,16 @@ from iron_man_features.data_manager.preparation import (
 )
 from iron_man_features.elo_system import EloSystem, calculate_elos
 from iron_man_features.features import FEATURES
+
+GAME_ID_COLUMNS = [
+    "match_id",
+    "match_date",
+    "team_id",
+    "team_id_op",
+    "game_id",
+    "played_map",
+    "won",
+]
 
 
 importlib.reload(logging)
@@ -35,9 +46,7 @@ elo_system_slow = EloSystem(
 )
 data = calculate_elos(data, dfs["games_for_elo"], elo_system_slow)
 
-feature_df = data[
-    ["match_id", "match_date", "team_id", "team_id_op", "game_id", "played_map", "won"]
-].copy()
+feature_df = data[GAME_ID_COLUMNS].copy()
 
 feature_df = calculate_features(
     feature_df=feature_df,
@@ -86,3 +95,16 @@ logging.info(
     f"{len(matches_to_predict.columns)} columns"
 )
 matches_to_predict.to_csv("data/matches_to_predict.csv", index=False)
+
+feature_list = [
+    f for f in feature_df.columns
+    if f not in GAME_ID_COLUMNS
+    and '(' in f
+]
+
+logging.info(
+    f"Saving features list of {len(feature_list)} features"
+)
+
+with open('data/feature_list.json', 'w') as f:
+    json.dump({"features_list": feature_list}, f, indent=4)

@@ -33,7 +33,7 @@ class SimpleFeature(ModelFeature):
         self.shift = shift
         if self.shift == 0:
             self.live = True
-        self.name = f"simple_feature({self.field}, shift={self.shift})"
+        self.name = f"simple_feature({self.field}-shift={self.shift})"
 
     def calculation(self, df: pd.DataFrame) -> pd.DataFrame:
         result = pd.DataFrame(index=df.index)
