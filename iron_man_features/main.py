@@ -29,11 +29,11 @@ data = pd.concat([dfs["team_games"], dfs["matches_to_predict"]])
 
 elo_system = EloSystem()
 data = calculate_elos(data, dfs["games_for_elo"], elo_system)
-elo_system_strong = EloSystem(
+elo_system_slow = EloSystem(
     k_factor=10,
     postfix="_slow",
 )
-data = calculate_elos(data, dfs["games_for_elo"], elo_system_strong)
+data = calculate_elos(data, dfs["games_for_elo"], elo_system_slow)
 
 feature_df = data[
     ["match_id", "match_date", "team_id", "team_id_op", "game_id", "played_map", "won"]
@@ -51,7 +51,6 @@ feature_df = create_opponent_features(feature_df)
 
 def create_elo_crossing_features(df: pd.DataFrame):
     team_elo_features = [f for f in df.columns if "elo" in f and "_op" not in f]
-    # op_elo_features = [f for f in df.columns if 'elo' in f and '_op' in f]
     for f in team_elo_features:
         new_feature_name = f.replace("elo", "elo_cross")
         if "_tr" in f:

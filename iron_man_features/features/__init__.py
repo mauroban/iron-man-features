@@ -16,7 +16,7 @@ FEATURES = [
 
 MAPS = ["anubis", "mirage", "nuke", "dust2", "vertigo", "ancient", "inferno"]
 
-WINDOWS = [3, 5, 10, 20, 50, 100]
+WINDOWS = [5, 10, 20, 50, 100]
 
 average_columns = [
     "won",
