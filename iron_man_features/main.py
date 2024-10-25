@@ -13,6 +13,7 @@ from iron_man_features.data_manager.preparation import (
 from iron_man_features.elo_system import EloSystem, calculate_elos
 from iron_man_features.features import FEATURES
 
+
 GAME_ID_COLUMNS = [
     "match_id",
     "match_date",
@@ -37,6 +38,8 @@ logging.basicConfig(
 dfs = get_dataframes("iron_man_features/queries")
 
 data = pd.concat([dfs["team_games"], dfs["matches_to_predict"]])
+
+data = data.sort_values('match_date')
 
 elo_system = EloSystem()
 data = calculate_elos(data, dfs["games_for_elo"], elo_system)
@@ -96,15 +99,9 @@ logging.info(
 )
 matches_to_predict.to_csv("data/matches_to_predict.csv", index=False)
 
-feature_list = [
-    f for f in feature_df.columns
-    if f not in GAME_ID_COLUMNS
-    and '(' in f
-]
+feature_list = [f for f in feature_df.columns if f not in GAME_ID_COLUMNS and "(" in f]
 
-logging.info(
-    f"Saving features list of {len(feature_list)} features"
-)
+logging.info(f"Saving features list of {len(feature_list)} features")
 
-with open('data/feature_list.json', 'w') as f:
-    json.dump({"features_list": feature_list}, f, indent=4)
+with open("data/feature_list.json", "w") as f:
+    json.dump({"features_list": sorted(feature_list)}, f, indent=4)
