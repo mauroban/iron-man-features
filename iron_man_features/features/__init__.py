@@ -43,6 +43,8 @@ average_columns = [
     "hltv_rank_op",
     "player_carried",
     "player_carried_down",
+    "rounds_lost_on_win",
+    "rounds_won_on_loss",
 ]
 
 for avg_column in average_columns:

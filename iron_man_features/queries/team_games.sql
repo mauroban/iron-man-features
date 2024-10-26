@@ -165,6 +165,8 @@ SELECT
     t.min_rating < 0.5 AS player_carried_down,
     t.max_rating > 1.6 AS player_carried,
     -- scouts
+    CASE WHEN t.score > op.score THEN op.score_ct + op.score_tr ELSE NULL END rounds_lost_on_win,
+    CASE WHEN t.score < op.score THEN t.score_ct + t.score_tr ELSE NULL END rounds_won_on_loss,
     t.kills/t.total_rounds AS kills_per_round,
     t.deaths/t.total_rounds AS deaths_per_round,
     t.first_kills/t.total_rounds AS first_kills_per_round,

@@ -240,6 +240,5 @@ def calculate_elos(
 
     for c in elo_columns:
         for i, new_match in df.loc[new_matches].iterrows():
-            df.at[i, c] = elo_system.ratings.get(new_match["roster_hash"]).get(c)
-
+            df.at[i, c] = elo_system.ratings.get(new_match["roster_hash"], {}).get(c)
     return df
