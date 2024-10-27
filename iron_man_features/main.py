@@ -39,7 +39,7 @@ dfs = get_dataframes("iron_man_features/queries")
 
 data = pd.concat([dfs["team_games"], dfs["matches_to_predict"]])
 
-data = data.sort_values('match_date')
+data = data.sort_values("match_date")
 
 elo_system = EloSystem()
 data = calculate_elos(data, dfs["games_for_elo"], elo_system)

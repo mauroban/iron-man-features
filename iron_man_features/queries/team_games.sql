@@ -152,14 +152,14 @@ SELECT
         WHEN op.hltv_rank <= 50 THEN 50
         WHEN op.hltv_rank <= 100 THEN 100
         WHEN op.hltv_rank <= 500 THEN 500
-        ELSE NULL END AS top_hltv_rank_op,
+        ELSE NULL END AS rank_range_op,
     CASE WHEN t.hltv_rank <= 5 THEN 5
         WHEN t.hltv_rank <= 10 THEN 10
         WHEN t.hltv_rank <= 20 THEN 20
         WHEN t.hltv_rank <= 50 THEN 50
         WHEN t.hltv_rank <= 100 THEN 100
         WHEN t.hltv_rank <= 500 THEN 500
-        ELSE NULL END AS top_hltv_rank,
+        ELSE NULL END AS rank_range,
     t.hltv_rank - op.hltv_rank AS rank_diff,
     -- performance
     t.min_rating < 0.5 AS player_carried_down,

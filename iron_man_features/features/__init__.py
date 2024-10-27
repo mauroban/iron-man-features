@@ -47,6 +47,32 @@ average_columns = [
     "rounds_won_on_loss",
 ]
 
+important_average_columns = [
+    "won",
+    "kills_per_round",
+    "deaths_per_round",
+    "first_kills_per_round",
+    "flash_assists_per_round",
+    "pistols_won",
+    "rounds_lost_on_win",
+    "rounds_won_on_loss",
+]
+
+
+for rank_range in [5, 10, 20, 50, 100, 500]:
+    FEATURES.append(HistoricalSum("game_played", rank_range_op=rank_range))
+    for avg_column in important_average_columns:
+        FEATURES.append(HistoricalAverage(avg_column, rank_range_op=rank_range))
+        for map_name in MAPS:
+            FEATURES.append(
+                HistoricalAverage(
+                    avg_column,
+                    played_map=map_name.lower(),
+                    rank_range_op=rank_range,
+                )
+            )
+
+
 for avg_column in average_columns:
     FEATURES.append(HistoricalAverage(avg_column))
     for map_name in MAPS:
