@@ -590,9 +590,6 @@
         "simple_feature(overall_elo_slow-shift=0)_op",
         "simple_feature(overall_elo_slow-shift=5)",
         "simple_feature(overall_elo_slow-shift=5)_op",
-        "simple_feature(played_map_ct_elo-shift=0)",
-        "simple_feature(played_map_ct_elo-shift=0)_op",
-        "simple_feature(played_map_ct_elo_cross-shift=0)",
         "simple_feature(played_map_elo-shift=0)",
         "simple_feature(played_map_elo-shift=0)_op",
         "simple_feature(played_map_elo-shift=5)",
@@ -604,9 +601,6 @@
         "simple_feature(played_map_elo_slow-shift=0)",
         "simple_feature(played_map_elo_slow-shift=0)_op",
         "simple_feature(played_map_elo_slow-shift=5)",
-        "simple_feature(played_map_elo_slow-shift=5)_op",
-        "simple_feature(played_map_tr_elo-shift=0)",
-        "simple_feature(played_map_tr_elo-shift=0)_op",
-        "simple_feature(played_map_tr_elo_cross-shift=0)"
+        "simple_feature(played_map_elo_slow-shift=5)_op"
     ]
 }

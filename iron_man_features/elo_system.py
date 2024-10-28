@@ -76,6 +76,7 @@ class EloSystem:
         elif team_score < opponent_score:
             return 0, 1
         else:
+            logging.warning("Tied match found!!!")
             return 0.5, 0.5
 
     def calc_boost_multiplier(self, team_score: int, opponent_score: int) -> float:
@@ -122,6 +123,11 @@ class EloSystem:
         opponent_elo = self.ratings.setdefault(opponent_id, {}).setdefault(
             elo_hash, self.default_elo(opponent_rank)
         )
+        if team_score is None or opponent_score is None:
+            logging.warning(
+                f"Score is null for game {team_id}x{opponent_id}, aborting elo calc"
+            )
+            return
 
         # Determine the match result
         team_actual_score, opponent_actual_score = self.determine_match_outcome(
@@ -164,16 +170,17 @@ class EloSystem:
                 opponent_rank=game["hltv_rank_op"],
             )
 
-        for side in ["ct", "tr"]:
-            self.update_elo(
-                team_id=game["roster_hash"],
-                opponent_id=game["roster_hash_op"],
-                team_score=game[f"score_{side}"],
-                opponent_score=game[f"score_{side}_op"],
-                elo_hash=f"{game["played_map"].lower()}_{side}_elo{self.postfix}",
-                team_rank=game["hltv_rank"],
-                opponent_rank=game["hltv_rank_op"],
-            )
+        # for side in ["ct", "tr"]:
+        #     op_side = "tr" if side == "ct" else "ct"
+        #     self.update_elo(
+        #         team_id=game["roster_hash"],
+        #         opponent_id=game["roster_hash_op"],
+        #         team_score=game[f"score_{side}"],
+        #         opponent_score=game[f"score_{op_side}_op"],
+        #         elo_hash=f"{game["played_map"].lower()}_{side}_elo{self.postfix}",
+        #         team_rank=game["hltv_rank"],
+        #         opponent_rank=game["hltv_rank_op"],
+        #     )
 
     def calculate_elo(self, games: pd.DataFrame) -> Tuple[
         Dict[int, float],

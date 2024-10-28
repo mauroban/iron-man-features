@@ -91,6 +91,6 @@ for map_name in MAPS:
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_slow"))
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo", shift=5))
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_slow", shift=5))
-    FEATURES.append(SimpleFeature(f"{map_name.lower()}_ct_elo"))
-    FEATURES.append(SimpleFeature(f"{map_name.lower()}_tr_elo"))
+    # FEATURES.append(SimpleFeature(f"{map_name.lower()}_ct_elo"))
+    # FEATURES.append(SimpleFeature(f"{map_name.lower()}_tr_elo"))
     FEATURES.append(HistoricalSum("game_played", played_map=map_name))
