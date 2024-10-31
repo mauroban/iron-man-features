@@ -1,9 +1,10 @@
 import pandas as pd
 
+from iron_man_features.features.calculation_functions import calculate_games_last_n_days
 from iron_man_features.features.model_feature import ModelFeature
 
 
-class SimpleFeature(ModelFeature):
+class GamesPlayedLastDays(ModelFeature):
     """
     Classe SimpleFeature extrai um campo da tabela de scouts do banco de dados para a
     rodada atual ou rodadas anteriores.
@@ -15,6 +16,7 @@ class SimpleFeature(ModelFeature):
     Atributos:
     - live (bool): Indica se a feature é calculada em tempo real ou não. Padrão: False.
     - feature_type (str): Tipo de feature. Padrão: 'numeric'.
+    - base_df (str): DataFrame base utilizado. Padrão: 'scouts'.
 
     Uso:
     >>> simple_feature = SimpleFeature(field="gols", shift=1)
@@ -26,20 +28,23 @@ class SimpleFeature(ModelFeature):
     feature_type: str = "numeric"
     shift: int
 
-    def __init__(self, field: str, shift=0):
-        self.field = field
-        self.shift = shift
-        if self.shift == 0:
-            self.live = True
-        self.name = f"simple_feature({self.field}-shift={self.shift})"
+    def __init__(self, days: int, **kwargs):
+        self.days = days
+        self.filters = kwargs
+        kwargs_string = "-".join([f"{k}={v}" for k, v in self.filters.items()])
+        self.name = f"games_played_last_days({self.days}"
+        if len(kwargs_string) > 2:
+            self.name += f"-{kwargs_string})"
+        else:
+            self.name += ")"
 
     def calculation(self, df: pd.DataFrame) -> pd.DataFrame:
         result = pd.DataFrame(index=df.index)
 
-        # Extrai o campo especificado com o deslocamento (shift) aplicado
-        if self.shift > 0:
-            result[self.name] = df.groupby("roster_hash")[self.field].shift(self.shift)
-        else:
-            result[self.name] = df[self.field]
+        result[self.name] = calculate_games_last_n_days(
+            df,
+            n_days=self.days,
+            filters=self.filters,
+        )
 
         return result[self.name]
