@@ -13,6 +13,7 @@ class EloSystem:
         boost_factor: float = 1,
         postfix: str = "",
         first_from_rank: bool = True,
+        boost_diff: bool = False,
     ):
         """
         Initialize the EloSystem.
@@ -31,13 +32,15 @@ class EloSystem:
         self.ratings = {}
         self.postfix = postfix
         self.first_from_rank = first_from_rank
+        self.boost_diff = boost_diff
         logging.info(
             "Elo System initiated\n"
             f"k_factor: {k_factor}\n"
             f"boost_threshold: {boost_threshold}\n"
             f"boost_factor: {boost_factor}\n"
             f"postfix: {postfix}\n"
-            f"first_from_rank: {first_from_rank}"
+            f"first_from_rank: {first_from_rank}\n"
+            f"boost_diff: {boost_diff}"
         )
 
     def default_elo(self, rank) -> float:
@@ -95,6 +98,22 @@ class EloSystem:
             return self.boost_factor
         return 1
 
+    def calc_boost_diff(self, team_score: int, opponent_score: int) -> float:
+        """
+        Calculate the boost diff based on the score difference.
+
+        Args:
+            team_score (int): The score of the team.
+            opponent_score (int): The score of the opponent.
+
+        Returns:
+            float: Boost diff, 1 if no boost is applied.
+        """
+        if self.boost_diff:
+            score_difference = abs(team_score - opponent_score)
+            return self.k_factor / 10 * score_difference
+        return 0
+
     def update_elo(
         self,
         team_id: int,
@@ -140,15 +159,22 @@ class EloSystem:
 
         # Calculate the boost multiplier based on the score difference
         boost_multiplier = self.calc_boost_multiplier(team_score, opponent_score)
+        boost_diff = self.calc_boost_diff(team_score, opponent_score)
 
         # Apply Elo updates with the boost multiplier
         self.ratings[team_id][elo_hash] += (
-            self.k_factor * boost_multiplier * (team_actual_score - expected_team_score)
+            self.k_factor
+            * boost_multiplier
+            * (team_actual_score - expected_team_score)
+            + boost_diff
+            * (1 if team_actual_score > expected_team_score else -1)
         )
         self.ratings[opponent_id][elo_hash] += (
             self.k_factor
             * boost_multiplier
             * (opponent_actual_score - expected_opponent_score)
+            + boost_diff
+            * (1 if opponent_actual_score > expected_opponent_score else -1)
         )
 
     def process_game(self, game: pd.Series) -> None:

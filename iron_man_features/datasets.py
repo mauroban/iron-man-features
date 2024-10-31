@@ -43,10 +43,11 @@ def update_feature_df():
         postfix="_slow",
     )
     elo_system_fast = EloSystem(
-        k_factor=64,
+        k_factor=50,
         postfix="_fast",
-        boost_factor=1.2,
-        boost_threshold=6,
+        # boost_factor=1.2,
+        # boost_threshold=6,
+        boost_diff=True,
     )
 
     data = calculate_elos(data, dfs["games_for_elo"], elo_system)
