@@ -9,6 +9,8 @@ def safe_path_join(*args):
 
 # Configured paths
 DB_CONNECTION_STRING = os.getenv("DB_CONNECTION_STRING")
-PROCESSED_FOLDER = os.getenv("PROCESSED_FOLDER", "data/processed")
-UNPROCESSED_FOLDER = os.getenv("UNPROCESSED_FOLDER", "data/unprocessed")
-ERROR_FOLDER = os.getenv("ERROR_FOLDER", "data/errors")
+FEATURES_DF_PATH = os.getenv("FEATURES_DF_PATH", "data/features.csv")
+MATCHES_TO_PREDICT_PATH = os.getenv(
+    "MATCHES_TO_PREDICT_PATH", "data/matches_to_predict.csv"
+)
+FEATURES_LIST_PATH = os.getenv("FEATURES_LIST_PATH", "data/feature_list.json")

@@ -8,8 +8,10 @@ from iron_man_features.features.simple_feature import SimpleFeature
 FEATURES = [
     SimpleFeature("overall_elo"),
     SimpleFeature("overall_elo_slow"),
+    SimpleFeature("overall_elo_fast"),
     SimpleFeature("overall_elo", shift=5),
     SimpleFeature("overall_elo_slow", shift=5),
+    SimpleFeature("overall_elo_fast", shift=5),
     HistoricalSum("game_played"),
     Categorical("played_map"),
     SimpleFeature("hltv_rank"),
@@ -89,8 +91,10 @@ for avg_column in average_columns:
 for map_name in MAPS:
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo"))
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_slow"))
+    FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_fast"))
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo", shift=5))
     FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_slow", shift=5))
+    FEATURES.append(SimpleFeature(f"{map_name.lower()}_elo_fast", shift=5))
     # FEATURES.append(SimpleFeature(f"{map_name.lower()}_ct_elo"))
     # FEATURES.append(SimpleFeature(f"{map_name.lower()}_tr_elo"))
     FEATURES.append(HistoricalSum("game_played", played_map=map_name))
