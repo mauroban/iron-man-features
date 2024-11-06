@@ -21,9 +21,7 @@ def apply_filters(df, filters):
     return filtered_df
 
 
-def get_grouped_df(
-    df, groupby_key, shift, filters=None
-) -> pd.DataFrame:
+def get_grouped_df(df, groupby_key, shift, filters=None) -> pd.DataFrame:
     # Convertendo a chave do groupby em uma tupla, se for uma lista
     groupby_fields = groupby_key
     if isinstance(groupby_key, list):
@@ -71,9 +69,7 @@ def calculate_average(df, field, shift=1, filters=None):
     return average
 
 
-def calculate_moving_average(
-    df, field, window, shift=1, filters=None
-):
+def calculate_moving_average(df, field, window, shift=1, filters=None):
     grouped_df = get_grouped_df(
         df=df,
         groupby_key="roster_hash",
@@ -117,11 +113,9 @@ def calculate_games_last_n_days(df, n_days, shift=1, filters=None):
         filters=filters,
     )
     games_last_n_days = (
-        grouped_df[['game_played', 'match_date']]
+        grouped_df[["game_played", "match_date"]]
         .apply(
-            lambda x: x.rolling(
-                f'{n_days}D', on='match_date'
-            )['game_played']
+            lambda x: x.rolling(f"{n_days}D", on="match_date")["game_played"]
             .sum()
             .shift(shift)
         )

@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Tuple
+from typing import Tuple
 
 import pandas as pd
 
@@ -8,110 +8,135 @@ import pandas as pd
 class EloSystem:
     def __init__(
         self,
-        k_factor: int = 32,
+        base_k_factor: int = 32,
         boost_threshold: int = 6,
         boost_factor: float = 1,
         postfix: str = "",
         first_from_rank: bool = True,
         boost_diff: bool = False,
+        mean_elo: float = 1500,
+        decay_rate: float = 0.995,
     ):
         """
         Initialize the EloSystem.
 
         Args:
-            default_elo (float): Starting Elo rating for new teams.
-            k_factor (int): The standard K-factor for Elo updates.
-            boost_threshold (int): Score difference threshold to trigger Elo variation
-            boost.
-            boost_factor (float): Multiplier to apply when score difference exceeds the
-            threshold.
+            base_k_factor (int): The base K-factor for Elo updates.
+            boost_threshold (int): Score difference threshold to trigger
+                                   Elo variation boost.
+            boost_factor (float): Multiplier when score difference exceeds
+                                  the threshold.
+            postfix (str): Postfix to append to Elo keys.
+            first_from_rank (bool): Use initial Elo based on rank.
+            boost_diff (bool): Boost Elo change based on score difference.
+            mean_elo (float): The mean Elo rating for regression.
+            decay_rate (float): The rate at which Elo ratings decay over time.
         """
-        self.k_factor = k_factor
+        self.base_k_factor = base_k_factor
         self.boost_threshold = boost_threshold
         self.boost_factor = boost_factor
         self.ratings = {}
         self.postfix = postfix
         self.first_from_rank = first_from_rank
         self.boost_diff = boost_diff
+        self.mean_elo = mean_elo
+        self.decay_rate = decay_rate
+        self.team_game_counts = {}
+        self.last_played = {}
         logging.info(
             "Elo System initiated\n"
-            f"k_factor: {k_factor}\n"
+            f"base_k_factor: {base_k_factor}\n"
             f"boost_threshold: {boost_threshold}\n"
             f"boost_factor: {boost_factor}\n"
             f"postfix: {postfix}\n"
             f"first_from_rank: {first_from_rank}\n"
-            f"boost_diff: {boost_diff}"
+            f"boost_diff: {boost_diff}\n"
+            f"mean_elo: {mean_elo}\n"
+            f"decay_rate: {decay_rate}"
         )
 
     def default_elo(self, rank) -> float:
         if not self.first_from_rank:
-            return 1500
+            return self.mean_elo
         if pd.isna(rank):
-            return 1350
+            return self.mean_elo - 150
         base_elo = {
-            5: 1600,
-            20: 1550,
-            50: 1500,
-            100: 1450,
-            200: 1400,
-            500: 1350,
+            5: self.mean_elo + 100,
+            20: self.mean_elo + 50,
+            50: self.mean_elo,
+            100: self.mean_elo - 50,
+            200: self.mean_elo - 100,
+            500: self.mean_elo - 150,
         }
-        for i in base_elo.keys():
+        for i in sorted(base_elo.keys()):
             if int(rank) <= i:
                 return base_elo[i]
-        return 1350
+        return self.mean_elo - 150
+
+    def get_dynamic_k(self, team_id: int, current_date: pd.Timestamp) -> float:
+        num_games = self.team_game_counts.get(team_id, 0)
+        last_played = self.last_played.get(team_id, current_date)
+        days_inactive = (current_date - last_played).days
+        if num_games < 5:
+            base_k = self.base_k_factor * 2  # Higher K-factor for new teams
+        elif num_games < 20:
+            base_k = self.base_k_factor
+        else:
+            base_k = self.base_k_factor / 2  # Lower K-factor for established teams
+
+        # Adjust K-factor based on days inactive
+        if days_inactive <= 7:
+            k_multiplier = 1.0
+        elif days_inactive <= 30:
+            # Increase linearly from 1.0 to 1.5 as days_inactive goes from 7 to 30
+            k_multiplier = 1.0 + ((days_inactive - 7) / (30 - 7)) * 0.5
+        else:
+            k_multiplier = 1.5  # Cap the multiplier at 1.5
+
+        dynamic_k = base_k * k_multiplier
+        return dynamic_k
+
+    def regress_to_mean(self, team_id: int, elo_hash: str) -> None:
+        team_elo = self.ratings[team_id][elo_hash]
+        num_games = self.team_game_counts.get(team_id, 0)
+        weight = min(1, 5 / (num_games + 1))
+        self.ratings[team_id][elo_hash] = (
+            1 - weight
+        ) * team_elo + weight * self.mean_elo
+
+    def apply_decay(
+        self, team_id: int, elo_hash: str, current_date: pd.Timestamp
+    ) -> None:
+        last_played = self.last_played.get(team_id, current_date)
+        days_inactive = (current_date - last_played).days
+        decay_factor = self.decay_rate**days_inactive
+        self.ratings[team_id][elo_hash] *= decay_factor
+        self.last_played[team_id] = current_date
 
     def calc_expected_score(self, elo_team: float, elo_opponent: float) -> float:
-        """
-        Calculate the expected score of a team based on its Elo rating and the
-        opponent's Elo rating.
-        """
         return 1 / (1 + 10 ** ((elo_opponent - elo_team) / 400))
 
     def determine_match_outcome(
         self, team_score: int, opponent_score: int
     ) -> Tuple[float, float]:
-        """
-        Determine the match outcome in terms of actual Elo scores.
-        """
         if team_score > opponent_score:
             return 1, 0
         elif team_score < opponent_score:
             return 0, 1
         else:
-            logging.warning("Tied match found!!!")
+            # For ties or overtime, adjust as needed
             return 0.5, 0.5
 
     def calc_boost_multiplier(self, team_score: int, opponent_score: int) -> float:
-        """
-        Calculate the boost multiplier based on the score difference.
-
-        Args:
-            team_score (int): The score of the team.
-            opponent_score (int): The score of the opponent.
-
-        Returns:
-            float: Boost multiplier, 1 if no boost is applied.
-        """
         score_difference = abs(team_score - opponent_score)
         if score_difference >= self.boost_threshold:
             return self.boost_factor
         return 1
 
     def calc_boost_diff(self, team_score: int, opponent_score: int) -> float:
-        """
-        Calculate the boost diff based on the score difference.
-
-        Args:
-            team_score (int): The score of the team.
-            opponent_score (int): The score of the opponent.
-
-        Returns:
-            float: Boost diff, 1 if no boost is applied.
-        """
         if self.boost_diff:
             score_difference = abs(team_score - opponent_score)
-            return self.k_factor / 10 * score_difference
+            return self.base_k_factor / 10 * score_difference
         return 0
 
     def update_elo(
@@ -123,28 +148,22 @@ class EloSystem:
         elo_hash: str,
         team_rank: int,
         opponent_rank: int,
+        current_date: pd.Timestamp,
     ) -> None:
-        """# noqa
-        Update Elo ratings for both teams based on the match result, applying a boost if necessary.
-
-        Args:
-            ratings (Dict): The Elo rating dictionary to update (overall, map-specific, or side-specific).
-            team_key (Tuple): The key for the team's Elo rating in the dictionary.
-            opponent_key (Tuple): The key for the opponent's Elo rating in the dictionary.
-            team_actual_score (float): The actual score of the team (1 for win, 0 for loss, 0.5 for draw).
-            opponent_actual_score (float): The actual score of the opponent.
-            team_score (int): The score of the team.
-            opponent_score (int): The score of the opponent.
-        """
         team_elo = self.ratings.setdefault(team_id, {}).setdefault(
             elo_hash, self.default_elo(team_rank)
         )
         opponent_elo = self.ratings.setdefault(opponent_id, {}).setdefault(
             elo_hash, self.default_elo(opponent_rank)
         )
+
+        # Apply decay to both teams
+        self.apply_decay(team_id, elo_hash, current_date)
+        self.apply_decay(opponent_id, elo_hash, current_date)
+
         if team_score is None or opponent_score is None:
             logging.warning(
-                f"Score is null for game {team_id}x{opponent_id}, aborting elo calc"
+                f"Score is null for game {team_id} x {opponent_id}, aborting elo calc"
             )
             return
 
@@ -155,36 +174,42 @@ class EloSystem:
 
         # Calculate the expected scores
         expected_team_score = self.calc_expected_score(team_elo, opponent_elo)
-        expected_opponent_score = self.calc_expected_score(opponent_elo, team_elo)
+        expected_opponent_score = 1 - expected_team_score
 
         # Calculate the boost multiplier based on the score difference
         boost_multiplier = self.calc_boost_multiplier(team_score, opponent_score)
         boost_diff = self.calc_boost_diff(team_score, opponent_score)
 
+        # Get dynamic K-factors
+        team_k = self.get_dynamic_k(team_id, current_date)
+        opponent_k = self.get_dynamic_k(opponent_id, current_date)
+
         # Apply Elo updates with the boost multiplier
-        self.ratings[team_id][elo_hash] += (
-            self.k_factor
-            * boost_multiplier
-            * (team_actual_score - expected_team_score)
-            + boost_diff
-            * (1 if team_actual_score > expected_team_score else -1)
-        )
-        self.ratings[opponent_id][elo_hash] += (
-            self.k_factor
-            * boost_multiplier
-            * (opponent_actual_score - expected_opponent_score)
-            + boost_diff
-            * (1 if opponent_actual_score > expected_opponent_score else -1)
+        team_elo_change = team_k * boost_multiplier * (
+            team_actual_score - expected_team_score
+        ) + boost_diff * (1 if team_actual_score > expected_team_score else -1)
+        opponent_elo_change = opponent_k * boost_multiplier * (
+            opponent_actual_score - expected_opponent_score
+        ) + boost_diff * (1 if opponent_actual_score > expected_opponent_score else -1)
+
+        # Update the ratings
+        self.ratings[team_id][elo_hash] += team_elo_change
+        self.ratings[opponent_id][elo_hash] += opponent_elo_change
+
+        # Increment game counts
+        self.team_game_counts[team_id] = self.team_game_counts.get(team_id, 0) + 1
+        self.team_game_counts[opponent_id] = (
+            self.team_game_counts.get(opponent_id, 0) + 1
         )
 
+        # Regress ratings to the mean for both teams
+        self.regress_to_mean(team_id, elo_hash)
+        self.regress_to_mean(opponent_id, elo_hash)
+
     def process_game(self, game: pd.Series) -> None:
-        """
-        Process a single game to update overall Elo, map-specific Elo,
-        and side-specific Elo.
-        """
         for elo_hash in [
             f"overall_elo{self.postfix}",
-            f"{game["played_map"].lower()}_elo{self.postfix}",
+            f"{game['played_map'].lower()}_elo{self.postfix}",
         ]:
             self.update_elo(
                 team_id=game["roster_hash"],
@@ -194,37 +219,10 @@ class EloSystem:
                 elo_hash=elo_hash,
                 team_rank=game["hltv_rank"],
                 opponent_rank=game["hltv_rank_op"],
+                current_date=game["start_date"],
             )
 
-        # for side in ["ct", "tr"]:
-        #     op_side = "tr" if side == "ct" else "ct"
-        #     self.update_elo(
-        #         team_id=game["roster_hash"],
-        #         opponent_id=game["roster_hash_op"],
-        #         team_score=game[f"score_{side}"],
-        #         opponent_score=game[f"score_{op_side}_op"],
-        #         elo_hash=f"{game["played_map"].lower()}_{side}_elo{self.postfix}",
-        #         team_rank=game["hltv_rank"],
-        #         opponent_rank=game["hltv_rank_op"],
-        #     )
-
-    def calculate_elo(self, games: pd.DataFrame) -> Tuple[
-        Dict[int, float],
-        Dict[Tuple[int, str], float],
-        Dict[Tuple[int, str, str], float],
-    ]:
-        """
-        Calculate Elo ratings for all games.
-
-        Args:
-            games (pd.DataFrame): DataFrame containing game results.
-
-        Returns:
-            Tuple containing:
-            - overall_elo: Dictionary of overall Elo ratings.
-            - map_elo: Dictionary of map-specific Elo ratings.
-            - side_map_elo: Dictionary of side-specific Elo ratings.
-        """
+    def calculate_elo(self, games: pd.DataFrame) -> None:
         elo_rows = []
         match_ratings = {}
         last_match_id = None
@@ -238,13 +236,12 @@ class EloSystem:
                     "roster_hash": roster_hash,
                 }
                 elo_row.update(match_ratings.get(roster_hash, {}))
-                # print(elo_row)
                 elo_rows.append(elo_row)
             self.process_game(game)
 
         self.elo_table = pd.DataFrame.from_records(elo_rows)
 
-    def add_elos_to_df(self, df):
+    def add_elos_to_df(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.merge(
             self.elo_table,
             how="left",
